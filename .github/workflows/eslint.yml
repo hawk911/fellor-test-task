@@ -11,12 +11,10 @@ on:
     - cron: '29 18 * * 4'
 
 jobs:
-  lint: # <-- Изменено имя задачи для ясности
+  lint:
     name: Run ESLint Scan
     runs-on: ubuntu-latest
-    
-    # Добавляем таймаут на случай, если задача зависнет
-    timeout-minutes: 10
+    timeout-minutes: 10 # Защита от зависания
     
     permissions:
       contents: read
@@ -27,25 +25,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Устанавливаем Node.js и включаем кэширование
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
+      # Устанавливаем ВСЕ зависимости проекта из package-lock.json
       - name: Install dependencies
         run: npm ci
 
-      # Изменено: теперь мы запускаем скрипт из package.json
+      # Запускаем ESLint через скрипт из package.json
       - name: Run ESLint
-        # Запускаем скрипт "lint:ci", который должен быть в package.json
-        # Это более гибкий и стандартный подход
-        run: npm run lint:ci
+        run: npm run lint:ci # <-- Используем скрипт
         continue-on-error: true
 
+      # Загружаем отчет, если он был создан
       - name: Upload analysis results to GitHub
-        # Добавлено условие: этот шаг выполнится всегда, даже если предыдущий завершился с ошибкой.
-        # Это гарантирует загрузку отчета при любых результатах линтинга.
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
