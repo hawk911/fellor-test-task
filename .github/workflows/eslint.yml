@@ -1,50 +1,62 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# ESLint is a tool for identifying and reporting on patterns
-# found in ECMAScript/JavaScript code.
-# More details at https://github.com/eslint/eslint
-# and https://eslint.org
+# .github/workflows/eslint.yml
+
+# Название воркфлоу
 name: ESLint
 
+# Триггеры для запуска
 on:
   push:
     branches: [ "main" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "main" ]
   schedule:
     - cron: '29 18 * * 4'
 
+# Задачи, которые будут выполняться
 jobs:
   eslint:
-    name: Run eslint scanning
+    name: Run ESLint Scan
     runs-on: ubuntu-latest
+    
+    # Разрешения, необходимые для загрузки результатов в раздел Security
     permissions:
       contents: read
       security-events: write
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      actions: read # требуется для приватных репозиториев
+      
     steps:
+      # 1. Клонирование репозитория
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install ESLint
-        run: |
-          npm install eslint@8.10.0
-          npm install @microsoft/eslint-formatter-sarif@3.1.0
+      # 2. Установка Node.js (лучшая практика)
+      # Укажите здесь версию Node.js, которую использует ваш проект
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Например, LTS-версия 20.x
+          cache: 'npm' # Включаем кэширование зависимостей для npm
 
+      # 3. Установка всех зависимостей проекта (правильный способ)
+      # npm ci устанавливает зависимости строго по файлу package-lock.json.
+      # Это быстрее и надежнее, чем "npm install".
+      # ESLint и все плагины должны быть в devDependencies вашего package.json.
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Запуск ESLint для сканирования кода
+      # Используем npx, чтобы запустить ESLint, установленный в node_modules
       - name: Run ESLint
-        env:
-          SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
           npx eslint . \
-            --config .eslintrc.js \
             --ext .js,.jsx,.ts,.tsx \
             --format @microsoft/eslint-formatter-sarif \
             --output-file eslint-results.sarif
+        # continue-on-error: true позволяет продолжить выполнение, даже если ESLint нашел ошибки,
+        # чтобы отчет мог быть загружен.
         continue-on-error: true
 
+      # 5. Загрузка результатов сканирования (SARIF) на GitHub
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
