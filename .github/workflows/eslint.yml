@@ -14,7 +14,7 @@ jobs:
   lint:
     name: Run ESLint Scan
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Защита от зависания
+    timeout-minutes: 10
     
     permissions:
       contents: read
@@ -25,23 +25,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Устанавливаем Node.js и включаем кэширование
+      # Устанавливаем Node.js и включаем кэширование для YARN
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'yarn' # <-- ВАЖНО: меняем на 'yarn'
 
-      # Устанавливаем ВСЕ зависимости проекта из package-lock.json
+      # Устанавливаем зависимости с помощью YARN
       - name: Install dependencies
-        run: npm ci
+        # Используем аналог "npm ci" для Yarn
+        run: yarn install --frozen-lockfile
 
-      # Запускаем ESLint через скрипт из package.json
+      # Запускаем ESLint через скрипт, используя Yarn
       - name: Run ESLint
-        run: npm run lint:ci # <-- Используем скрипт
+        run: yarn lint:ci # <-- Используем yarn для запуска скрипта
         continue-on-error: true
 
-      # Загружаем отчет, если он был создан
+      # Загружаем отчет
       - name: Upload analysis results to GitHub
         if: always()
         uses: github/codeql-action/upload-sarif@v3
