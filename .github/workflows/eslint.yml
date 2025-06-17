@@ -1,9 +1,7 @@
 # .github/workflows/eslint.yml
 
-# Название воркфлоу
 name: ESLint
 
-# Триггеры для запуска
 on:
   push:
     branches: [ "main" ]
@@ -12,52 +10,43 @@ on:
   schedule:
     - cron: '29 18 * * 4'
 
-# Задачи, которые будут выполняться
 jobs:
-  eslint:
+  lint: # <-- Изменено имя задачи для ясности
     name: Run ESLint Scan
     runs-on: ubuntu-latest
     
-    # Разрешения, необходимые для загрузки результатов в раздел Security
+    # Добавляем таймаут на случай, если задача зависнет
+    timeout-minutes: 10
+    
     permissions:
       contents: read
       security-events: write
-      actions: read # требуется для приватных репозиториев
+      actions: read
       
     steps:
-      # 1. Клонирование репозитория
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Установка Node.js (лучшая практика)
-      # Укажите здесь версию Node.js, которую использует ваш проект
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Например, LTS-версия 20.x
-          cache: 'npm' # Включаем кэширование зависимостей для npm
+          node-version: '20'
+          cache: 'npm'
 
-      # 3. Установка всех зависимостей проекта (правильный способ)
-      # npm ci устанавливает зависимости строго по файлу package-lock.json.
-      # Это быстрее и надежнее, чем "npm install".
-      # ESLint и все плагины должны быть в devDependencies вашего package.json.
       - name: Install dependencies
         run: npm ci
 
-      # 4. Запуск ESLint для сканирования кода
-      # Используем npx, чтобы запустить ESLint, установленный в node_modules
+      # Изменено: теперь мы запускаем скрипт из package.json
       - name: Run ESLint
-        run: |
-          npx eslint . \
-            --ext .js,.jsx,.ts,.tsx \
-            --format @microsoft/eslint-formatter-sarif \
-            --output-file eslint-results.sarif
-        # continue-on-error: true позволяет продолжить выполнение, даже если ESLint нашел ошибки,
-        # чтобы отчет мог быть загружен.
+        # Запускаем скрипт "lint:ci", который должен быть в package.json
+        # Это более гибкий и стандартный подход
+        run: npm run lint:ci
         continue-on-error: true
 
-      # 5. Загрузка результатов сканирования (SARIF) на GitHub
       - name: Upload analysis results to GitHub
+        # Добавлено условие: этот шаг выполнится всегда, даже если предыдущий завершился с ошибкой.
+        # Это гарантирует загрузку отчета при любых результатах линтинга.
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: eslint-results.sarif
