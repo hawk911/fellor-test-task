@@ -1,28 +1,49 @@
-name: Lint Code Base
+# Название воркфлоу
+name: Run Linter
+
+# Триггеры для запуска воркфлоу
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+# Задачи, которые будут выполняться
 jobs:
   lint:
+    # Имя задачи, которое будет отображаться в интерфейсе GitHub
     name: Run Linter
+    # Использовать последнюю версию Ubuntu в качестве операционной системы
     runs-on: ubuntu-latest
+
+    # Шаги выполнения задачи
     steps:
+      # Шаг 1: Клонирование вашего репозитория
       - name: Check out code
         uses: actions/checkout@v4
 
+      # Шаг 2: Установка Node.js и кэширование зависимостей Yarn
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # ИЗМЕНЕНИЕ: Указываем кэш для yarn
           cache: 'yarn'
 
+      # Шаг 3: Установка основных зависимостей из lock-файла
       - name: Install dependencies
-        # ИЗМЕНЕНИЕ: Используем yarn
         run: yarn install --frozen-lockfile
 
+      # -------------------------------------------------------------------
+      # !!! НАЧАЛО НЕРЕКОМЕНДУЕМОГО БЛОКА !!!
+      # Этот шаг решает проблему только внутри этого воркфлоу,
+      # но не исправляет конфигурацию самого проекта.
+      # Это приводит к рассинхронизации между CI и локальной разработкой.
+      - name: 'BAD PRACTICE: Install ESLint dynamically'
+        run: yarn add --dev eslint
+      # !!! КОНЕЦ НЕРЕКОМЕНДУЕМОГО БЛОКА !!!
+      # -------------------------------------------------------------------
+
+      # Шаг 4: Запуск ESLint
+      # Этот шаг теперь сработает, так как eslint был установлен на предыдущем шаге.
       - name: Run ESLint
         run: yarn lint
