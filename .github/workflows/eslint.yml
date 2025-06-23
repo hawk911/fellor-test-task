@@ -1,51 +1,48 @@
-# .github/workflows/eslint.yml
+name: Lint Code Base
 
-name: ESLint
-
+# Триггеры для запуска воркфлоу
 on:
+  # Запускать при пуше в указанные ветки
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+  # Запускать при создании pull request в указанные ветки
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '29 18 * * 4'
+    branches:
+      - main
 
+# Задачи, которые будут выполняться
 jobs:
   lint:
-    name: Run ESLint Scan
+    # Имя задачи, которое будет отображаться в интерфейсе GitHub
+    name: Run ESLint
+    # Использовать последнюю версию Ubuntu в качестве операционной системы
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-      
+
+    # Шаги выполнения задачи
     steps:
-      - name: Checkout code
+      # Шаг 1: Клонирование вашего репозитория
+      - name: Check out code
         uses: actions/checkout@v4
 
-      # Устанавливаем Node.js и включаем кэширование для YARN
+      # Шаг 2: Установка Node.js
+      # Использует action 'setup-node' для установки Node.js и кэширования зависимостей
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
+          # Укажите версию Node.js, которую использует ваш проект
           node-version: '20'
-          cache: 'yarn' # <-- ВАЖНО: меняем на 'yarn'
+          # Включаем кэширование для менеджера пакетов (в данном случае npm)
+          # Это значительно ускорит последующие запуски
+          cache: 'npm'
 
-      # Устанавливаем зависимости с помощью YARN
+      # Шаг 3: Установка зависимостей проекта
+      # Использует кэш, если он доступен. 'ci' вместо 'install' для более строгой и быстрой установки.
       - name: Install dependencies
-        # Используем аналог "npm ci" для Yarn
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
-      # Запускаем ESLint через скрипт, используя Yarn
+      # Шаг 4: Запуск ESLint
+      # Выполняет скрипт "lint" из вашего файла package.json
+      # Убедитесь, что в вашем package.json есть скрипт с именем "lint"
       - name: Run ESLint
-        run: yarn lint:ci # <-- Используем yarn для запуска скрипта
-        continue-on-error: true
-
-      # Загружаем отчет
-      - name: Upload analysis results to GitHub
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: eslint-results.sarif
-          wait-for-processing: true
+        run: npm run lint
