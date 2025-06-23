@@ -1,35 +1,40 @@
+# Название воркфлоу
 name: Lint Code Base
 
+# Запускать при каждом push и pull request в ветку main
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
   lint:
-    name: Run ESLint
+    name: Run Linter
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Клонирование репозитория
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Изменения начинаются здесь
+      # 2. Установка Node.js (версию можно изменить)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # Указываем, что нужно кэшировать зависимости для yarn
-          cache: 'yarn'
+          # Включаем кэширование для ускорения установки зависимостей
+          # Если проект использует yarn или pnpm, измените 'npm' на 'yarn' или 'pnpm'
+          cache: 'npm'
 
+      # 3. Установка зависимостей
+      # Если используется другой менеджер пакетов, замените команду:
+      # yarn: yarn install --frozen-lockfile
+      # pnpm: pnpm install --frozen-lockfile
       - name: Install dependencies
-        # Используем yarn для установки
-        # Флаг --frozen-lockfile является аналогом 'npm ci' для yarn
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
+      # 4. Запуск линтера
+      # Убедитесь, что в package.json есть скрипт "lint"
       - name: Run ESLint
-        # Запускаем lint-скрипт через yarn
-        run: yarn lint
+        run: npm run lint
