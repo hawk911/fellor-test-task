@@ -23,7 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # Включаем кэширование для ускорения установки зависимостей
           # Если проект использует yarn или pnpm, измените 'npm' на 'yarn' или 'pnpm'
           cache: 'npm'
 
